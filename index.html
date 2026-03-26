@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harmon Transport — Digital Dispatch Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#0a0a0a;--zinc900:#18181b;--zinc800:#27272a;--zinc700:#3f3f46;
+  --yellow:#facc15;--yellow-dim:#a1870a;--yellow-glow:rgba(250,204,21,.15);
+  --red:#dc2626;--red-glow:rgba(220,38,38,.3);
+  --white:#fafafa;--gray:#a1a1aa;--gray-dim:#52525b;
+}
+body{font-family:'Inter',sans-serif;background:var(--black);color:var(--yellow);min-height:100vh;overflow:hidden}
+
+.app{display:flex;flex-direction:column;height:100vh;max-width:760px;margin:0 auto;border-left:2px solid rgba(250,204,21,.15);border-right:2px solid rgba(250,204,21,.15);position:relative;background:var(--black)}
+
+/* Header */
+header{padding:1.25rem 1.5rem;border-bottom:2px solid var(--yellow);display:flex;align-items:center;justify-content:space-between;background:var(--black);flex-shrink:0;position:relative;z-index:10}
+.header-left{display:flex;align-items:center;gap:1rem}
+.logo-mark{width:48px;height:48px;background:var(--yellow);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:900;font-size:1.5rem;color:var(--black);font-style:italic}
+.brand h1{font-size:1.4rem;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;font-style:italic;line-height:1}
+.brand .status{display:flex;align-items:center;gap:.4rem;margin-top:.35rem}
+.brand .status .dot{width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 2s infinite;box-shadow:0 0 10px var(--red-glow)}
+.brand .status span{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.15em}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.header-right{text-align:right;border-left:2px solid rgba(250,204,21,.15);padding-left:1rem}
+.header-right .bhp{font-size:1.3rem;font-weight:900;color:#ea580c;font-style:italic;letter-spacing:-.02em}
+.header-right .inducted{font-size:.55rem;font-weight:800;color:var(--white);text-transform:uppercase;letter-spacing:.2em}
+
+/* Mute Button */
+.mute-btn{position:absolute;right:1.5rem;bottom:-18px;width:36px;height:36px;background:var(--zinc900);border:2px solid var(--yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:20;transition:all .3s;font-size:.9rem}
+.mute-btn:hover{background:var(--yellow);color:var(--black)}
+.mute-btn.muted{opacity:.4}
+
+/* Chat */
+.chat-area{flex:1;overflow-y:auto;padding:1.5rem;scroll-behavior:smooth}
+.chat-area::-webkit-scrollbar{width:4px}
+.chat-area::-webkit-scrollbar-thumb{background:var(--yellow-dim);border-radius:2px}
+
+/* Welcome Screen */
+.welcome{padding:1rem 0;text-align:center}
+.welcome .dispatch-icon{display:inline-flex;background:var(--yellow);padding:1.25rem;border-radius:12px;margin-bottom:1.5rem;box-shadow:0 0 40px var(--yellow-glow),0 20px 40px rgba(0,0,0,.5)}
+.welcome .dispatch-icon svg{width:48px;height:48px;color:var(--black)}
+.welcome h2{font-size:2rem;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;font-style:italic;margin-bottom:.4rem}
+.welcome .sub{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.35em;color:var(--gray);margin-bottom:2rem}
+
+.fleet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:2rem;padding:0 .5rem}
+.fleet-card{background:var(--zinc900);border:2px solid rgba(250,204,21,.08);padding:1.25rem .75rem;border-radius:4px;text-align:center;cursor:default;transition:all .3s}
+.fleet-card:hover{border-color:var(--yellow);transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.4)}
+.fleet-card .icon{font-size:1.75rem;margin-bottom:.5rem}
+.fleet-card .label{font-size:.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+
+.quick-btns{padding:0 .5rem;margin-bottom:2rem}
+.quick-btn{width:100%;text-align:left;padding:1rem 1.25rem;background:var(--zinc900);border:none;border-radius:4px;color:var(--yellow);font-family:inherit;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;transition:all .3s;margin-bottom:.6rem;position:relative;overflow:hidden}
+.quick-btn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px}
+.quick-btn.yellow::before{background:var(--yellow)}
+.quick-btn.red::before{background:var(--red)}
+.quick-btn:hover{background:var(--zinc800);padding-left:1.5rem}
+
+.footer-info{border-top:2px solid rgba(250,204,21,.08);padding-top:1.5rem;margin-top:1rem}
+.footer-info .cols{display:flex;gap:2rem;margin-bottom:1.5rem}
+.footer-info .col{flex:1}
+.footer-info .col-title{font-size:.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.3em;color:rgba(255,255,255,.25);margin-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:.4rem}
+.footer-info .col-item{font-size:.7rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;padding:.3rem 0;cursor:pointer;transition:color .3s}
+.footer-info .col-item:hover{color:var(--yellow)}
+.footer-info .phone{font-size:1.1rem;font-weight:900;color:var(--yellow);font-style:italic;margin-bottom:.3rem}
+.footer-info .email{font-size:.65rem;font-weight:600;color:rgba(255,255,255,.3);font-style:italic;letter-spacing:0}
+
+.cta-btn{width:100%;padding:1.1rem;background:var(--yellow);color:var(--black);border:none;border-radius:4px;font-family:inherit;font-weight:900;font-size:.7rem;text-transform:uppercase;letter-spacing:.3em;font-style:italic;cursor:pointer;transition:all .3s;box-shadow:0 10px 30px var(--yellow-glow);margin-bottom:1rem}
+.cta-btn:hover{background:var(--white);box-shadow:0 15px 40px rgba(250,204,21,.25)}
+
+.powered{display:flex;align-items:center;justify-content:center;gap:.5rem;padding-top:.75rem}
+.powered .vm-dot{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#ec4899);display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(124,58,237,.3)}
+.powered .vm-dot::after{content:'';width:6px;height:6px;background:#fff;border-radius:50%}
+.powered span{font-size:.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.3em;color:rgba(255,255,255,.2)}
+
+/* Messages */
+.msg{margin-bottom:1rem;animation:msgIn .3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg-bubble{max-width:85%;padding:1rem 1.25rem;border-radius:4px;font-size:.82rem;line-height:1.7;font-weight:500}
+.msg.user{display:flex;justify-content:flex-end}
+.msg.user .msg-bubble{background:var(--yellow);color:var(--black);font-weight:700;border-bottom-right-radius:0}
+.msg.ai .msg-bubble{background:var(--zinc900);border:2px solid rgba(250,204,21,.12);color:var(--gray);border-bottom-left-radius:0}
+.msg .msg-time{font-size:.55rem;color:var(--gray-dim);margin-top:.3rem;font-family:'JetBrains Mono',monospace;font-weight:500}
+.msg.user .msg-time{text-align:right}
+
+/* Status Bar */
+.status-bar{padding:.5rem 1.5rem;text-align:center;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;flex-shrink:0;transition:all .3s}
+.status-bar.idle{background:var(--zinc900);color:var(--gray-dim)}
+.status-bar.listening{background:rgba(34,197,94,.1);color:#22c55e;animation:statusPulse 2s infinite}
+.status-bar.speaking{background:var(--yellow-glow);color:var(--yellow)}
+.status-bar.thinking{background:rgba(245,158,11,.08);color:#f59e0b}
+@keyframes statusPulse{0%,100%{box-shadow:inset 0 0 0 transparent}50%{box-shadow:inset 0 0 20px rgba(34,197,94,.05)}}
+
+/* Typing Indicator */
+.typing{display:flex;gap:.3rem;padding:.5rem 0}
+.typing .dot{width:6px;height:6px;background:var(--yellow);border-radius:50%;animation:bounce .8s infinite}
+.typing .dot:nth-child(2){animation-delay:.15s}
+.typing .dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* Input */
+footer{padding:1rem 1.5rem;border-top:2px solid var(--yellow);background:var(--black);flex-shrink:0;position:relative;z-index:10}
+.speaking-indicator{position:absolute;top:-44px;left:50%;transform:translateX(-50%);background:var(--yellow);padding:.5rem 1.5rem;border-radius:4px;display:none;align-items:center;gap:.6rem;box-shadow:0 0 25px var(--yellow-glow);border:2px solid var(--black)}
+.speaking-indicator.show{display:flex}
+.speaking-indicator .bars{display:flex;gap:3px;align-items:center}
+.speaking-indicator .bar{width:3px;background:var(--black);border-radius:1px;animation:barPulse .8s infinite}
+.speaking-indicator .bar:nth-child(1){height:8px;animation-delay:0s}
+.speaking-indicator .bar:nth-child(2){height:16px;animation-delay:.1s}
+.speaking-indicator .bar:nth-child(3){height:6px;animation-delay:.2s}
+@keyframes barPulse{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.4)}}
+.speaking-indicator span{font-size:.6rem;font-weight:900;color:var(--black);text-transform:uppercase;letter-spacing:.2em;font-style:italic}
+
+.input-row{display:flex;gap:.6rem;align-items:center}
+.mic-btn{width:54px;height:54px;background:var(--red);border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;border-bottom:4px solid #991b1b;box-shadow:0 0 15px var(--red-glow)}
+.mic-btn:hover{background:#ef4444}
+.mic-btn:active{transform:scale(.95)}
+.mic-btn.listening{animation:micPulse 1.5s infinite;background:#22c55e;border-bottom-color:#166534;box-shadow:0 0 15px rgba(34,197,94,.3)}
+@keyframes micPulse{0%,100%{box-shadow:0 0 15px rgba(34,197,94,.3)}50%{box-shadow:0 0 30px rgba(34,197,94,.5)}}
+.mic-btn svg{width:24px;height:24px;color:var(--white)}
+
+.text-input{flex:1;background:var(--zinc900);border:2px solid rgba(250,204,21,.15);border-radius:4px;padding:.9rem 1rem;color:var(--yellow);font-family:inherit;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-style:italic;outline:none;transition:border-color .3s}
+.text-input::placeholder{color:rgba(250,204,21,.2)}
+.text-input:focus{border-color:var(--yellow)}
+
+.send-btn{width:54px;height:54px;background:var(--zinc800);border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;border-bottom:4px solid var(--black);color:var(--gray-dim)}
+.send-btn.active{background:var(--yellow);color:var(--black);border-bottom-color:var(--yellow-dim)}
+.send-btn:active{transform:scale(.95)}
+.send-btn svg{width:20px;height:20px}
+
+/* Live Radio Overlay */
+.live-overlay{position:fixed;inset:0;z-index:100;background:var(--yellow);display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.live-overlay.show{display:flex}
+.live-bars{display:flex;gap:6px;margin-bottom:3rem}
+.live-bars .bar{width:6px;height:48px;background:var(--black);border-radius:3px;animation:liveBar 1s infinite;transform-origin:center}
+.live-bars .bar:nth-child(1){animation-delay:0s}
+.live-bars .bar:nth-child(2){animation-delay:.1s;height:64px}
+.live-bars .bar:nth-child(3){animation-delay:.2s;height:32px}
+.live-bars .bar:nth-child(4){animation-delay:.3s;height:56px}
+.live-bars .bar:nth-child(5){animation-delay:.4s}
+@keyframes liveBar{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.3)}}
+.live-title{font-size:2.5rem;font-weight:900;color:var(--black);text-transform:uppercase;letter-spacing:-.02em;font-style:italic;margin-bottom:.5rem}
+.live-sub{font-size:.6rem;font-weight:800;color:rgba(0,0,0,.5);text-transform:uppercase;letter-spacing:.3em;margin-bottom:3rem}
+.live-transcript{flex:1;width:100%;max-width:500px;background:rgba(0,0,0,.08);border-radius:12px;padding:2rem;border:3px solid rgba(0,0,0,.08);overflow-y:auto;margin-bottom:2rem}
+.live-transcript .label{font-size:.55rem;font-weight:800;color:rgba(0,0,0,.3);text-transform:uppercase;letter-spacing:.3em;margin-bottom:1rem;border-bottom:1px solid rgba(0,0,0,.08);padding-bottom:.5rem}
+.live-transcript .text{font-size:1.3rem;font-weight:900;color:var(--black);text-transform:uppercase;letter-spacing:-.01em;font-style:italic;line-height:1.5}
+.live-close{background:var(--black);color:var(--yellow);border:none;padding:1rem 3rem;border-radius:4px;font-family:inherit;font-weight:900;font-size:.65rem;text-transform:uppercase;letter-spacing:.3em;cursor:pointer;display:flex;align-items:center;gap:.75rem;transition:all .3s}
+.live-close:hover{background:var(--zinc900)}
+.live-close .dot{width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 1s infinite}
+
+@media(max-width:500px){
+  .fleet-grid{grid-template-columns:repeat(2,1fr)}
+  .header-right{display:none}
+  .footer-info .cols{flex-direction:column;gap:1rem}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="header-left">
+      <div class="logo-mark">H</div>
+      <div class="brand">
+        <h1>Harmon Transport</h1>
+        <div class="status">
+          <div class="dot"></div>
+          <span>Hotshots Status: Active</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="bhp">BHP</div>
+      <div class="inducted">Inducted</div>
+    </div>
+    <div class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Toggle voice">&#128264;</div>
+  </header>
+
+  <div class="status-bar idle" id="statusBar">
+    <span id="statusText">Digital Dispatch Ready</span>
+  </div>
+
+  <div class="chat-area" id="chatArea">
+    <!-- Welcome Screen -->
+    <div class="welcome" id="welcomeScreen">
+      <div class="dispatch-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <h2>Dispatch Center</h2>
+      <p class="sub">Specialized 24/7 WA Mining Logistics</p>
+
+      <div class="fleet-grid">
+        <div class="fleet-card"><div class="icon">&#128763;</div><div class="label">1T Ute/Van</div></div>
+        <div class="fleet-card"><div class="icon">&#128666;</div><div class="label">3-5T Truck</div></div>
+        <div class="fleet-card"><div class="icon">&#128667;</div><div class="label">8-11T Semi</div></div>
+        <div class="fleet-card"><div class="icon">&#127981;</div><div class="label">24T Heavy</div></div>
+        <div class="fleet-card"><div class="icon">&#9992;&#65039;</div><div class="label">Air Freight</div></div>
+        <div class="fleet-card"><div class="icon">&#128737;&#65039;</div><div class="label">BHP Inducted</div></div>
+      </div>
+
+      <div class="quick-btns">
+        <button class="quick-btn yellow" onclick="quickAsk('I need an urgent hotshot delivery to a WA mine site. What do you need from me to dispatch?')">&#9889; Request Urgent Hotshot</button>
+        <button class="quick-btn red" onclick="quickAsk('What fleet options do you have for 24-tonne loads today?')">&#128666; Heavy Fleet Status</button>
+      </div>
+
+      <div class="footer-info">
+        <div class="cols">
+          <div class="col">
+            <div class="col-title">Support</div>
+            <div class="col-item" onclick="quickAsk('Tell me about your safety compliance')">Safety Compliance</div>
+            <div class="col-item" onclick="quickAsk('What is your BHP induction status?')">BHP Induction Registry</div>
+            <div class="col-item" onclick="quickAsk('How do I apply for a credit account?')">Credit Application</div>
+          </div>
+          <div class="col" style="text-align:right">
+            <div class="col-title">Direct Contact</div>
+            <div class="phone">0456 198 939</div>
+            <div class="email">paul@harmontransportation.com.au</div>
+          </div>
+        </div>
+        <button class="cta-btn" onclick="quickAsk('I want to book a delivery right now. What details do you need?')">Dispatch Hotshot Now</button>
+        <div class="powered">
+          <div class="vm-dot"></div>
+          <span>Violet Media</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="speaking-indicator" id="speakingIndicator">
+    <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+    <span>Dispatch Transmitting</span>
+  </div>
+
+  <footer>
+    <div class="input-row">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+      </button>
+      <input type="text" class="text-input" id="textInput" placeholder="Radio Load Specs..." onkeydown="if(event.key==='Enter')sendText()" oninput="updateSendBtn()">
+      <button class="send-btn" id="sendBtn" onclick="sendText()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// HARMON TRANSPORT — DIGITAL DISPATCH AGENT
+// ═══════════════════════════════════════════
+
+const SYSTEM_PROMPT = `You are the Digital Dispatch Agent for Harmon Transportation, WA's Hotshot Specialist. Your name is "Dispatch". You speak with authority, urgency, and confidence — like a seasoned logistics coordinator.
+
+COMPANY CONTEXT:
+- Company: Harmon Transportation
+- Tagline: WA's Hotshot Specialist
+- Industry: Mining freight and urgent logistics
+- STATUS: BHP INDUCTED (critical for mine site delivery)
+- Services: Hotshot road freight up to 24 tonnes, 1T-24T vehicles, 24/7 urgent air freight nationwide
+- Locations: Head Office - 2/11 Uppill Pl, Wangara WA 6065; Newman Office - 4 Barton Way, Newman WA 6753
+- Contact: Phone 0456 198 939 (24/7), Email paul@harmontransportation.com.au
+- Fleet: 1T Utes, 1T Vans, 3T Trucks, 5T Trucks, 8T Trucks, 11T Semi Trailers, 24T Semi Trailers, Air Freight
+- Coverage: Perth, Kalgoorlie, Newman (WA) + Australia-wide via air freight
+- USP: No need for full loads — will transport even a single hose. Instant pickup. 24/7 operations.
+- Mission: "Committed to delivering your freight, even if it is only one hose, ASAP."
+
+VOICE RULES:
+- Keep responses SHORT and DIRECT (2-4 sentences max for voice delivery)
+- Use mining/logistics lingo naturally: "hotshot", "dispatch", "load specs", "freight", "pickup"
+- Never use markdown formatting — plain text only, no asterisks, no bullet symbols
+- Be confident and action-oriented
+- Always drive toward a booking or quote
+- For pricing: "Pricing depends on load weight, dimensions, and destination. Call 0456 198 939 or give me the specs and I'll get Paul to quote you."
+- For bookings: Ask for pickup location, delivery location, load weight, dimensions, and urgency level
+- End conversations with a clear next step or call to action
+- If asked about competitors, stay professional — focus on Harmon's strengths`;
+
+const VOICE_ID = 'UgBBYS2sOqTuMpoF3BR0'; // Mark - ElevenLabs
+let messages = [];
+let isListening = false;
+let isSpeaking = false;
+let isMuted = false;
+let recognition = null;
+let playerEl = null;
+let hasUserGesture = false;
+let micActivated = false;
+
+// ── Audio Setup ──
+function markGesture() {
+  if (hasUserGesture) return;
+  hasUserGesture = true;
+  playerEl = new Audio();
+  playerEl.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+  playerEl.play().then(() => playerEl.pause()).catch(() => {});
+}
+
+// ── Status ──
+function setStatus(state, text) {
+  const bar = document.getElementById('statusBar');
+  bar.className = `status-bar ${state}`;
+  document.getElementById('statusText').textContent = text;
+}
+
+// ── Messages ──
+function addMessage(role, text) {
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.style.display = 'none';
+
+  messages.push({ role, content: text });
+
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = `msg ${role === 'user' ? 'user' : 'ai'}`;
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  div.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div><div class="msg-time">${time}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showTyping() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typingMsg';
+  div.innerHTML = '<div class="msg-bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingMsg');
+  if (el) el.remove();
+}
+
+function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+// ── Quick Ask ──
+function quickAsk(text) {
+  markGesture();
+  document.getElementById('textInput').value = '';
+  processQuery(text);
+}
+
+// ── Send Text ──
+function sendText() {
+  markGesture();
+  const input = document.getElementById('textInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  updateSendBtn();
+  processQuery(text);
+}
+
+function updateSendBtn() {
+  const btn = document.getElementById('sendBtn');
+  btn.classList.toggle('active', document.getElementById('textInput').value.trim().length > 0);
+}
+
+// ── Process Query ──
+let lastQuery = '';
+let lastQueryTime = 0;
+
+async function processQuery(text) {
+  const now = Date.now();
+  if (text === lastQuery && now - lastQueryTime < 3000) return;
+  lastQuery = text;
+  lastQueryTime = now;
+
+  addMessage('user', text);
+  if (isListening) stopListening();
+  setStatus('thinking', 'Processing Dispatch...');
+  showTyping();
+
+  try {
+    const chatMessages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...messages.slice(-12).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }))
+    ];
+
+    const res = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatMessages, model: 'openai/gpt-oss-120b', max_tokens: 400, temperature: 0.7 })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    const reply = data.choices?.[0]?.message?.content || "Radio interference. Try again.";
+    addMessage('assistant', reply);
+
+    if (!isMuted && hasUserGesture) {
+      speak(reply);
+    } else {
+      setStatus('idle', 'Digital Dispatch Ready');
+      if (micActivated) resumeMic();
+    }
+  } catch(e) {
+    removeTyping();
+    addMessage('assistant', 'Dispatch offline. Contact 0456 198 939 directly.');
+    setStatus('idle', 'Digital Dispatch Ready');
+  }
+}
+
+// ── TTS ──
+let speakGen = 0;
+
+function speak(text) {
+  if (!hasUserGesture || !playerEl) return;
+  const gen = ++speakGen;
+  isSpeaking = true;
+  setStatus('speaking', 'Transmitting...');
+  document.getElementById('speakingIndicator').classList.add('show');
+
+  fetch('/.netlify/functions/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voiceId: VOICE_ID })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('TTS failed');
+    return res.blob();
+  })
+  .then(blob => {
+    if (gen !== speakGen) return;
+    const url = URL.createObjectURL(blob);
+    playerEl.src = url;
+    playerEl.onended = () => {
+      isSpeaking = false;
+      document.getElementById('speakingIndicator').classList.remove('show');
+      setStatus('idle', 'Digital Dispatch Ready');
+      URL.revokeObjectURL(url);
+      if (micActivated) resumeMic();
+    };
+    playerEl.onerror = () => {
+      isSpeaking = false;
+      document.getElementById('speakingIndicator').classList.remove('show');
+      setStatus('idle', 'Digital Dispatch Ready');
+    };
+    playerEl.play().catch(() => {
+      isSpeaking = false;
+      document.getElementById('speakingIndicator').classList.remove('show');
+      setStatus('idle', 'Digital Dispatch Ready');
+    });
+  })
+  .catch(() => {
+    isSpeaking = false;
+    document.getElementById('speakingIndicator').classList.remove('show');
+    setStatus('idle', 'Digital Dispatch Ready');
+    if (micActivated) resumeMic();
+  });
+}
+
+// ── Voice Recognition ──
+function toggleMic() {
+  markGesture();
+  if (isListening) {
+    stopListening();
+    micActivated = false;
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  if (isSpeaking) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { addMessage('assistant', 'Voice not supported in this browser. Type your load specs instead.'); return; }
+
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-AU';
+
+  let finalText = '';
+  let silenceTimer = null;
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    finalText = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    clearTimeout(silenceTimer);
+    if (finalText.trim()) {
+      silenceTimer = setTimeout(() => {
+        if (finalText.trim().length > 2) {
+          processQuery(finalText.trim());
+          finalText = '';
+        }
+      }, 1500);
+    }
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    if (micActivated && !isSpeaking) {
+      setTimeout(() => { if (micActivated && !isSpeaking) startListening(); }, 300);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'no-speech' || e.error === 'aborted') return;
+  };
+
+  try {
+    recognition.start();
+    isListening = true;
+    micActivated = true;
+    document.getElementById('micBtn').classList.add('listening');
+    setStatus('listening', 'Listening for Load Specs...');
+  } catch(e) {}
+}
+
+function stopListening() {
+  if (recognition) try { recognition.stop(); } catch(e) {}
+  isListening = false;
+  document.getElementById('micBtn').classList.remove('listening');
+}
+
+function resumeMic() {
+  if (micActivated && !isSpeaking && !isListening) {
+    setTimeout(() => {
+      if (micActivated && !isSpeaking) startListening();
+    }, 500);
+  }
+}
+
+// ── Mute ──
+function toggleMute() {
+  isMuted = !isMuted;
+  const btn = document.getElementById('muteBtn');
+  btn.textContent = isMuted ? '🔇' : '🔊';
+  btn.classList.toggle('muted', isMuted);
+}
+
+// ── Init ──
+document.getElementById('textInput').addEventListener('keydown', e => e.stopPropagation());
+</script>
+</body>
+</html>
