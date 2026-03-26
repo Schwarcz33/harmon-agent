@@ -373,6 +373,7 @@ async function processQuery(text) {
 
   addMessage('user', text);
   if (isListening) stopListening();
+  isSpeaking = true; // Block mic restart during entire processing+speaking cycle
   setStatus('thinking', 'Processing Dispatch...');
   showTyping();
 
@@ -501,8 +502,13 @@ function startListening() {
   recognition.onend = () => {
     isListening = false;
     document.getElementById('micBtn').classList.remove('listening');
+    // Only restart if mic is active AND nothing is processing or speaking
     if (micActivated && !isSpeaking) {
-      setTimeout(() => { if (micActivated && !isSpeaking) startListening(); }, 300);
+      setTimeout(() => {
+        if (micActivated && !isSpeaking) {
+          startListening();
+        }
+      }, 800); // Longer delay to avoid echo
     }
   };
 
