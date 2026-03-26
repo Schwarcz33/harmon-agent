@@ -49,7 +49,7 @@ header{padding:1.25rem 1.5rem;border-bottom:2px solid var(--yellow);display:flex
 .welcome .sub{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.35em;color:var(--gray);margin-bottom:2rem}
 
 .fleet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:2rem;padding:0 .5rem}
-.fleet-card{background:var(--zinc900);border:2px solid rgba(250,204,21,.08);padding:1.25rem .75rem;border-radius:4px;text-align:center;cursor:default;transition:all .3s}
+.fleet-card{background:var(--zinc900);border:2px solid rgba(250,204,21,.08);padding:1.25rem .75rem;border-radius:4px;text-align:center;cursor:pointer;transition:all .3s}
 .fleet-card:hover{border-color:var(--yellow);transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.4)}
 .fleet-card .icon{font-size:1.75rem;margin-bottom:.5rem}
 .fleet-card .label{font-size:.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
@@ -197,12 +197,12 @@ footer{padding:1rem 1.5rem;border-top:2px solid var(--yellow);background:var(--b
       <p class="sub">Specialized 24/7 WA Mining Logistics</p>
 
       <div class="fleet-grid">
-        <div class="fleet-card"><div class="icon">&#128763;</div><div class="label">1T Ute/Van</div></div>
-        <div class="fleet-card"><div class="icon">&#128666;</div><div class="label">3-5T Truck</div></div>
-        <div class="fleet-card"><div class="icon">&#128667;</div><div class="label">8-11T Semi</div></div>
-        <div class="fleet-card"><div class="icon">&#127981;</div><div class="label">24T Heavy</div></div>
-        <div class="fleet-card"><div class="icon">&#9992;&#65039;</div><div class="label">Air Freight</div></div>
-        <div class="fleet-card"><div class="icon">&#128737;&#65039;</div><div class="label">BHP Inducted</div></div>
+        <div class="fleet-card" onclick="quickAsk('Tell me about your 1 Tonne Ute and Van service. What can they carry and how fast can you dispatch?')"><div class="icon">&#128763;</div><div class="label">1T Ute/Van</div></div>
+        <div class="fleet-card" onclick="quickAsk('What are your 3 to 5 Tonne truck capabilities? What loads can they handle?')"><div class="icon">&#128666;</div><div class="label">3-5T Truck</div></div>
+        <div class="fleet-card" onclick="quickAsk('Tell me about your 8 to 11 Tonne semi trailer service and what freight it handles.')"><div class="icon">&#128667;</div><div class="label">8-11T Semi</div></div>
+        <div class="fleet-card" onclick="quickAsk('What are your 24 Tonne heavy haulage capabilities? Where do you operate?')"><div class="icon">&#127981;</div><div class="label">24T Heavy</div></div>
+        <div class="fleet-card" onclick="quickAsk('How does your urgent air freight service work? Which airports and how fast?')"><div class="icon">&#9992;&#65039;</div><div class="label">Air Freight</div></div>
+        <div class="fleet-card" onclick="quickAsk('What does BHP Inducted mean? What mine sites can you access?')"><div class="icon">&#128737;&#65039;</div><div class="label">BHP Inducted</div></div>
       </div>
 
       <div class="quick-btns">
@@ -543,12 +543,28 @@ function resumeMic() {
   }
 }
 
-// ── Mute ──
+// ── Mute / Stop ──
 function toggleMute() {
   isMuted = !isMuted;
   const btn = document.getElementById('muteBtn');
-  btn.textContent = isMuted ? '🔇' : '🔊';
+  btn.textContent = isMuted ? '\u{1F507}' : '\u{1F50A}';
   btn.classList.toggle('muted', isMuted);
+
+  // If muting while speaking, stop immediately
+  if (isMuted && isSpeaking) {
+    stopAudio();
+  }
+}
+
+function stopAudio() {
+  speakGen++;
+  if (playerEl) {
+    playerEl.pause();
+    playerEl.src = '';
+  }
+  isSpeaking = false;
+  document.getElementById('speakingIndicator').classList.remove('show');
+  setStatus('idle', 'Digital Dispatch Ready');
 }
 
 // ── Home ──
