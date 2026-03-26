@@ -177,7 +177,10 @@ footer{padding:1rem 1.5rem;border-top:2px solid var(--yellow);background:var(--b
       <div class="bhp">BHP</div>
       <div class="inducted">Inducted</div>
     </div>
-    <div class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Toggle voice">&#128264;</div>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <button class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Toggle voice" style="position:static">&#128264;</button>
+      <button class="mute-btn" id="homeBtn" onclick="goHome()" title="Back to home" style="position:static;display:none">&#127968;</button>
+    </div>
   </header>
 
   <div class="status-bar idle" id="statusBar">
@@ -309,6 +312,7 @@ function setStatus(state, text) {
 function addMessage(role, text) {
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.style.display = 'none';
+  document.getElementById('homeBtn').style.display = 'flex';
 
   messages.push({ role, content: text });
 
@@ -545,6 +549,65 @@ function toggleMute() {
   const btn = document.getElementById('muteBtn');
   btn.textContent = isMuted ? '🔇' : '🔊';
   btn.classList.toggle('muted', isMuted);
+}
+
+// ── Home ──
+function goHome() {
+  // Stop any audio/listening
+  if (isListening) { stopListening(); micActivated = false; }
+  if (playerEl) { playerEl.pause(); playerEl.src = ''; }
+  isSpeaking = false;
+  document.getElementById('speakingIndicator').classList.remove('show');
+  setStatus('idle', 'Digital Dispatch Ready');
+
+  // Clear chat
+  messages = [];
+  const area = document.getElementById('chatArea');
+  area.innerHTML = '';
+
+  // Restore welcome screen
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome';
+  welcome.id = 'welcomeScreen';
+  welcome.innerHTML = `
+    <div class="dispatch-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <h2>Dispatch Center</h2>
+    <p class="sub">Specialized 24/7 WA Mining Logistics</p>
+    <div class="fleet-grid">
+      <div class="fleet-card"><div class="icon">&#128763;</div><div class="label">1T Ute/Van</div></div>
+      <div class="fleet-card"><div class="icon">&#128666;</div><div class="label">3-5T Truck</div></div>
+      <div class="fleet-card"><div class="icon">&#128667;</div><div class="label">8-11T Semi</div></div>
+      <div class="fleet-card"><div class="icon">&#127981;</div><div class="label">24T Heavy</div></div>
+      <div class="fleet-card"><div class="icon">&#9992;&#65039;</div><div class="label">Air Freight</div></div>
+      <div class="fleet-card"><div class="icon">&#128737;&#65039;</div><div class="label">BHP Inducted</div></div>
+    </div>
+    <div class="quick-btns">
+      <button class="quick-btn yellow" onclick="quickAsk('I need an urgent hotshot delivery to a WA mine site. What do you need from me to dispatch?')">&#9889; Request Urgent Hotshot</button>
+      <button class="quick-btn red" onclick="quickAsk('What fleet options do you have for 24-tonne loads today?')">&#128666; Heavy Fleet Status</button>
+    </div>
+    <div class="footer-info">
+      <div class="cols">
+        <div class="col">
+          <div class="col-title">Support</div>
+          <div class="col-item" onclick="quickAsk('Tell me about your safety compliance')">Safety Compliance</div>
+          <div class="col-item" onclick="quickAsk('What is your BHP induction status?')">BHP Induction Registry</div>
+          <div class="col-item" onclick="quickAsk('How do I apply for a credit account?')">Credit Application</div>
+        </div>
+        <div class="col" style="text-align:right">
+          <div class="col-title">Direct Contact</div>
+          <div class="phone">0456 198 939</div>
+          <div class="email">paul@harmontransportation.com.au</div>
+        </div>
+      </div>
+      <button class="cta-btn" onclick="quickAsk('I want to book a delivery right now. What details do you need?')">Dispatch Hotshot Now</button>
+      <div class="powered"><div class="vm-dot"></div><span>Violet Media</span></div>
+    </div>`;
+  area.appendChild(welcome);
+
+  // Hide home button
+  document.getElementById('homeBtn').style.display = 'none';
 }
 
 // ── Init ──
